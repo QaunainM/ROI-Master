@@ -19,8 +19,8 @@ const { getStore, connectLambda } = require('@netlify/blobs');
 
 const LLM_API_URL = process.env.LLM_API_URL || 'https://api.deepseek.com/v1/chat/completions';
 const MODEL = process.env.LLM_MODEL || 'deepseek-v4-flash';
-const MAX_TOKENS = 800;
-const REASONING_EFFORT = 'high';
+const MAX_TOKENS = 2000;
+const REASONING_EFFORT = 'low';
 const DAILY_LIMIT = 30;
 
 function utcDateKey() {
@@ -200,10 +200,9 @@ exports.handler = async function (event) {
     const data = await response.json();
     const message_out = data.choices?.[0]?.message || {};
     const reasoning = message_out.reasoning_content || '';
-    // DeepSeek thinking mode often puts the full answer in reasoning_content with empty content —
-    // fall back to reasoning_content if content is empty so the reply is never silently dropped.
-    const reply = message_out.content || reasoning;
-    if (!message_out.content) console.warn('Empty content from LLM — using reasoning_content as reply. finish_reason:', data.choices?.[0]?.finish_reason, 'usage:', JSON.stringify(data.usage));
+    const reply = message_out.content || '';
+    // finish_reason: length means tokens ran out — content will be empty or truncated
+    if (!message_out.content) console.warn('Empty content from LLM. finish_reason:', data.choices?.[0]?.finish_reason, 'usage:', JSON.stringify(data.usage));
     return {
       statusCode: 200,
       headers,
