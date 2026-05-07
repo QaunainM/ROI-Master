@@ -370,7 +370,7 @@ FORMATTING RULES (non-negotiable):
   }
 
   if (compactDataset) {
-    context += `\n\n=== FULL DATASET (all ${totalAssets} assets — scan this to find relevant assets for the user's question) ===\nFormat: Name [Section/Category] 1yr=$ 5yr=$ 10yr=$ 15yr=$ 20yr=$\n${compactDataset}`;
+    context += `\n\n=== FULL DATASET (ALL ${totalAssets} assets — every asset is listed here, scan thoroughly) ===\nFormat: Name [Category] 1yr/5yr/10yr/15yr/20yr  (values are $ growth from $1,000 seed; 0 = no data)\n${compactDataset}`;
   }
 
   return base + context;

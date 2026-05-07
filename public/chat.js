@@ -739,27 +739,15 @@
     };
   }
 
-  // Max assets to send as raw lines in free-text context. Above this, large user datasets
-  // would blow the token budget and cause Netlify timeouts.
-  const ASSET_LINE_LIMIT = 150;
-
   function buildAssetContext(message, assets) {
     if (_compactDatasetAssets !== assets) {
       _compactDatasetAssets = assets;
-      // If the dataset is large, cap at ASSET_LINE_LIMIT by taking the top assets by 10yr return
-      // so the AI still gets the most relevant data, just not every single row.
-      const toSerialise = assets.length > ASSET_LINE_LIMIT
-        ? [...assets].sort((a, b) => Number(b.v10 || 0) - Number(a.v10 || 0)).slice(0, ASSET_LINE_LIMIT)
-        : assets;
-      _compactDatasetCache = toSerialise.map(a => {
-        const parts = [];
-        if (a.v1)  parts.push(`1yr=$${Number(a.v1).toLocaleString()}`);
-        if (a.v5)  parts.push(`5yr=$${Number(a.v5).toLocaleString()}`);
-        if (a.v10) parts.push(`10yr=$${Number(a.v10).toLocaleString()}`);
-        if (a.v15) parts.push(`15yr=$${Number(a.v15).toLocaleString()}`);
-        if (a.v20) parts.push(`20yr=$${Number(a.v20).toLocaleString()}`);
+      // Ultra-compact format: fit ALL assets. No $ signs, no labels — just numbers separated by /
+      // Format: Name [Cat] 1yr/5yr/10yr/15yr/20yr  (values in whole dollars, 0 if missing)
+      _compactDatasetCache = assets.map(a => {
+        const v = [a.v1, a.v5, a.v10, a.v15, a.v20].map(x => Number(x) || 0).join('/');
         const cat = a.section || a.category || a.cat || '';
-        return `${a.name} [${cat}] ${parts.join(' ')}`;
+        return `${a.name} [${cat}] ${v}`;
       }).join('\n');
     }
 
