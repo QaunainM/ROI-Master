@@ -104,6 +104,32 @@ The built-in chat widget operates in two modes:
 - **Guardrails** — three layers of protection: client-side input blocking, server-side pattern matching, and a hardened system prompt that enforces read-only behaviour and resists prompt injection
 - **IP rate limiting** — each unique IP address is limited to 30 AI calls per UTC day, tracked server-side via the hosting platform's key-value store. This cannot be bypassed by clearing browser storage. The chat counter shows remaining messages; users who hit the limit see a message directing them to the site owner
 
+### How the AI Reasons Against the Dataset
+
+When a user sends a message, the full dataset is serialised into a compact string and sent to the LLM alongside the question. Every asset is included — none are filtered out — using an ultra-compact format:
+
+```
+Name [Category] 1yr/5yr/10yr/15yr/20yr
+```
+
+For example:
+```
+Gold ETF (GLD) [Commodities] 1180/1350/3500/1700/4500
+Gold Miners (GDX) [Commodities] 1550/1250/3800/600/3200
+Bitcoin (BTC) [Crypto] 3200/15000/177000/0/0
+```
+
+This serialised dataset is built once on page load and cached in memory as `_compactDatasetCache`. On every subsequent message in the session it is reused instantly — no re-parsing, no network calls, no disk reads. The in-memory cache is only invalidated if the user uploads a new CSV to replace the dataset.
+
+Sending the full dataset in each request means the LLM can scan, compare, and reason across all assets simultaneously within its context window. The AI is not limited to what it was pre-trained on — it works directly from the live data in front of it. This is how it can answer questions like "what does the dataset show about Gold?" and correctly identify both Gold ETF (GLD) and Gold Miners (GDX), or compare Ethereum against every gold and silver asset in the table.
+
+**Semantic search and concept matching** is handled entirely by the LLM's reasoning. If a user types "precious metals", "safe haven assets", or just "gold", the model maps those concepts to the relevant rows in the dataset itself — no keyword index or tag lookup required.
+
+**Potential future enhancement — vector search:**
+A more advanced approach would be to embed all asset names, categories, and descriptions into a vector database (such as Supabase pgvector, Pinecone, or Weaviate) when a dataset is uploaded. Each query would then run a semantic similarity search against those embeddings to retrieve only the most relevant 10-20 assets, which would be sent to the LLM instead of the full dataset. This would scale to very large datasets (10,000+ assets) without hitting token limits, and would enable even richer concept matching. The trade-off is significant added complexity: the dataset upload flow would need to call an embedding model, store vectors, and run a retrieval step before every AI call — plus the infrastructure and cost of maintaining a vector store. For datasets under ~1,000 assets, the current full-dataset approach is simpler, faster, and equally accurate.
+
+---
+
 ### Enabling AI on your own deployment
 
 1. Fork this repository and connect it to your hosting platform
