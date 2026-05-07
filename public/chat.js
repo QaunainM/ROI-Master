@@ -618,11 +618,16 @@
   }
 
   // pinnedAssets: optional array of asset objects to use directly (bypasses keyword matching)
-  async function fetchAIAnswer(message, history, pinnedAssets) {
+  // isHeatmap: when true, sends pre-aggregated per-class data instead of full 300-asset dataset
+  async function fetchAIAnswer(message, history, pinnedAssets, isHeatmap) {
     try {
       const assets = getAssets();
       const assetContext = assets
-        ? (pinnedAssets ? buildPinnedContext(pinnedAssets, assets) : buildAssetContext(message, assets))
+        ? (pinnedAssets
+            ? buildPinnedContext(pinnedAssets, assets)
+            : isHeatmap
+              ? buildHeatmapContext(assets)
+              : buildAssetContext(message, assets))
         : null;
 
       // Send last 8 exchanges (16 messages) for context without bloating the request
@@ -677,6 +682,59 @@
   // Cached compact dataset string — rebuilt only when the asset array changes
   let _compactDatasetCache = null;
   let _compactDatasetAssets = null;
+
+  // Build a compact per-class aggregated context for heatmap/chart prompts.
+  // Sends ~5 rows (one per asset class) instead of 300 raw asset lines,
+  // keeping the payload small enough to avoid the 30s Netlify timeout.
+  function buildHeatmapContext(assets) {
+    const classMap = {};
+    assets.forEach(a => {
+      const cls = a.section || a.category || a.cat || 'Unknown';
+      if (!classMap[cls]) classMap[cls] = { v1: [], v5: [], v10: [], v15: [], v20: [], count: 0 };
+      const c = classMap[cls];
+      c.count++;
+      ['1','5','10','15','20'].forEach(yr => {
+        const val = Number(a['v' + yr]);
+        if (val && !isNaN(val)) c['v' + yr].push(val);
+      });
+    });
+
+    const avg = arr => arr.length ? Math.round(arr.reduce((s, v) => s + v, 0) / arr.length) : null;
+    const fmt = v => v ? `$${v.toLocaleString()}` : 'N/A';
+
+    const classLines = Object.entries(classMap).map(([cls, c]) => {
+      const parts = [
+        `1yr=${fmt(avg(c.v1))}`,
+        `5yr=${fmt(avg(c.v5))}`,
+        `10yr=${fmt(avg(c.v10))}`,
+        `15yr=${fmt(avg(c.v15))}`,
+        `20yr=${fmt(avg(c.v20))}`,
+        `count=${c.count}`,
+      ];
+      return `${cls}: ${parts.join(' ')}`;
+    }).join('\n');
+
+    // Also include top 3 assets per class by 10yr so the AI can name specific examples
+    const top3ByClass = {};
+    assets.forEach(a => {
+      const cls = a.section || a.category || a.cat || 'Unknown';
+      if (!top3ByClass[cls]) top3ByClass[cls] = [];
+      if (a.v10) top3ByClass[cls].push(a);
+    });
+    const exampleLines = Object.entries(top3ByClass).map(([cls, arr]) => {
+      const sorted = arr.sort((a, b) => Number(b.v10) - Number(a.v10)).slice(0, 3);
+      const names = sorted.map(a => `${a.name} 10yr=$${Number(a.v10).toLocaleString()}`).join(', ');
+      return `${cls} top examples: ${names}`;
+    }).join('\n');
+
+    const assetClasses = Object.keys(classMap);
+    return {
+      totalAssets: assets.length,
+      assetClasses,
+      compactDataset: `=== ASSET CLASS AVERAGES (from $1,000 seed) ===\n${classLines}\n\n=== TOP 3 PER CLASS BY 10yr ===\n${exampleLines}`,
+      datasetSummary: null,
+    };
+  }
 
   function buildAssetContext(message, assets) {
     // Serialise the full dataset into a compact line-per-asset format.
@@ -2543,7 +2601,7 @@
     let answer = null;
     // Try AI whenever it's not explicitly unavailable (null = not-yet-probed, still worth trying)
     const aiWasAttempted = aiAvailable !== false;
-    if (aiWasAttempted) answer = await fetchAIAnswer(aiQuery, chatHistory.slice(0, -1), pinnedAssets || null);
+    if (aiWasAttempted) answer = await fetchAIAnswer(aiQuery, chatHistory.slice(0, -1), pinnedAssets || null, isChartPrompt);
 
     showTyping(false);
     setSendDisabled(false);
