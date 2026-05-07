@@ -618,14 +618,14 @@
   }
 
   // pinnedAssets: optional array of asset objects to use directly (bypasses keyword matching)
-  // isHeatmap: when true, sends pre-aggregated per-class data instead of full 300-asset dataset
-  async function fetchAIAnswer(message, history, pinnedAssets, isHeatmap) {
+  // isChartPrompt: when true, sends pre-aggregated per-class data instead of full asset list
+  async function fetchAIAnswer(message, history, pinnedAssets, isChartPrompt) {
     try {
       const assets = getAssets();
       const assetContext = assets
         ? (pinnedAssets
             ? buildPinnedContext(pinnedAssets, assets)
-            : isHeatmap
+            : isChartPrompt
               ? buildHeatmapContext(assets)
               : buildAssetContext(message, assets))
         : null;
@@ -736,12 +736,19 @@
     };
   }
 
+  // Max assets to send as raw lines in free-text context. Above this, large user datasets
+  // would blow the token budget and cause Netlify timeouts.
+  const ASSET_LINE_LIMIT = 150;
+
   function buildAssetContext(message, assets) {
-    // Serialise the full dataset into a compact line-per-asset format.
-    // The AI performs all semantic matching — no brittle keyword logic needed here.
     if (_compactDatasetAssets !== assets) {
       _compactDatasetAssets = assets;
-      _compactDatasetCache = assets.map(a => {
+      // If the dataset is large, cap at ASSET_LINE_LIMIT by taking the top assets by 10yr return
+      // so the AI still gets the most relevant data, just not every single row.
+      const toSerialise = assets.length > ASSET_LINE_LIMIT
+        ? [...assets].sort((a, b) => Number(b.v10 || 0) - Number(a.v10 || 0)).slice(0, ASSET_LINE_LIMIT)
+        : assets;
+      _compactDatasetCache = toSerialise.map(a => {
         const parts = [];
         if (a.v1)  parts.push(`1yr=$${Number(a.v1).toLocaleString()}`);
         if (a.v5)  parts.push(`5yr=$${Number(a.v5).toLocaleString()}`);
