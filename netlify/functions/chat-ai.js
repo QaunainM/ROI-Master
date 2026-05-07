@@ -162,8 +162,15 @@ exports.handler = async function (event) {
   const historyMessages = Array.isArray(conversationHistory)
     ? conversationHistory
         .filter(m => m && (m.role === 'user' || m.role === 'assistant') && typeof m.content === 'string')
-        .slice(-16) // safety cap
-        .map(m => ({ role: m.role, content: m.content.slice(0, 1500) })) // truncate each to avoid token explosion
+        .slice(-16)
+        .map(m => {
+          const msg = { role: m.role, content: m.content.slice(0, 1500) };
+          // DeepSeek thinking mode requires reasoning_content on assistant turns
+          if (m.role === 'assistant' && m.reasoning_content) {
+            msg.reasoning_content = m.reasoning_content.slice(0, 500);
+          }
+          return msg;
+        })
     : [];
 
   try {
@@ -260,9 +267,11 @@ SECURITY & ROLE CONSTRAINTS — absolute, non-negotiable:
 
 KNOWLEDGE RULES:
 - The FULL DATASET is provided below — all assets with exact return figures. Use these numbers directly.
-- SEMANTIC MATCHING: When the user asks about something by concept, theme, or colloquial name, find the best matching assets yourself. Examples: "wood" → Timber ETF, "miners" → Gold Miners + Silver Miners, "uranium" → Uranium (URA/CCJ), "chips" → all Semiconductor assets, "property" → Real Estate assets. Use your reasoning to find every relevant asset, not just literal name matches.
+- SEMANTIC MATCHING: When the user asks about something by concept, theme, or colloquial name, find the best matching assets yourself. Examples: "wood" → Timber ETF, "miners" → Gold Miners + Silver Miners, "uranium" → Uranium (URA/CCJ), "chips" → all Semiconductor assets, "property" → Real Estate assets, "gold" → Gold ETF + Gold Miners + Gold Bullion (NOT Goldman Sachs — Goldman Sachs is a bank stock, not a gold asset). Use your reasoning to find every relevant asset, not just literal name matches.
+- DISAMBIGUATION: Always match the commodity/asset meaning first, not company names. "Gold" = the metal/commodity. "Silver" = the metal. "Oil" = energy commodity. Only match company names if the user explicitly names a company (e.g. "Goldman Sachs", "Apple Inc").
 - For SECTOR/THEME questions, give an overview: best and worst performers, the range, and the macro story driving the sector. Never just describe one asset.
 - ALWAYS combine data with real-world context — events, fundamentals, macro factors. Never list numbers without explanation.
+- ASSETS NOT IN DATASET: If an asset is genuinely absent after thorough search (e.g. Ethereum, a foreign stock not listed), use your broad financial knowledge to provide estimated figures from a $1,000 seed. Label these "Est." in text and CHART DATA (e.g. "Ethereum Est. — $80000"). Never label dataset assets as Est.
 
 CHART DATA RULE — MANDATORY: end EVERY response with a blank line then a CHART DATA block.
 
@@ -335,10 +344,7 @@ FORMATTING RULES (non-negotiable):
 - 3 to 8 rows/items only
 - Dollar values: exact integers only, no ~, no k/M suffixes, no "approx"
 - No bold (**) markers anywhere inside the CHART DATA block
-- NEVER omit the CHART DATA block. A reply without it is an error.
-
-UNKNOWN ASSETS (supplement only — do not let this override dataset lookup):
-If an asset is genuinely absent from the dataset after exhaustive semantic search, supplement with knowledge-based estimates. Mark ONLY those with "Est." in text and CHART DATA (e.g. "Ethereum Est. — $80000"). Never apply "Est." to any asset that has exact figures in the dataset.`;
+- NEVER omit the CHART DATA block. A reply without it is an error.`;
 
   if (!assetContext) return base;
 

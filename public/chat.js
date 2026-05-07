@@ -31,8 +31,10 @@
     } catch { /* storage full or unavailable */ }
   }
 
-  function pushHistory(role, content) {
-    chatHistory.push({ role, content });
+  function pushHistory(role, content, reasoning_content) {
+    const entry = { role, content };
+    if (reasoning_content) entry.reasoning_content = reasoning_content;
+    chatHistory.push(entry);
     saveHistory();
   }
 
@@ -524,7 +526,8 @@
 
     addBotMsg(answer, { aiResponse: pillUsedAI });
     const replyStr = (answer && typeof answer === 'object') ? answer.reply : answer;
-    pushHistory('assistant', replyStr);
+    const replyReasoning1 = (answer && typeof answer === 'object') ? answer.reasoning : '';
+    pushHistory('assistant', replyStr, replyReasoning1);
     showFollowUpPills(generateFollowUps(q.label, replyStr));
     resetInactivity();
   }
@@ -586,9 +589,9 @@
     }
 
     addBotMsg(answer, { aiResponse: usedAI });
-    // pushHistory always takes a plain string
     const replyText = (answer && typeof answer === 'object') ? answer.reply : answer;
-    pushHistory('assistant', replyText);
+    const replyReasoning2 = (answer && typeof answer === 'object') ? answer.reasoning : '';
+    pushHistory('assistant', replyText, replyReasoning2);
     showFollowUpPills(generateFollowUps(text, replyText));
     resetInactivity();
   }
@@ -1066,7 +1069,8 @@
           if (!answer) answer = answerFreeText(text);
           addBotMsg(answer, { aiResponse: followUpUsedAI });
           const replyStr = (answer && typeof answer === 'object') ? answer.reply : answer;
-          pushHistory('assistant', replyStr);
+          const replyReasoning3 = (answer && typeof answer === 'object') ? answer.reasoning : '';
+          pushHistory('assistant', replyStr, replyReasoning3);
           showFollowUpPills(generateFollowUps(text, replyStr));
           resetInactivity();
         }, 500 + Math.random() * 300);
@@ -2635,7 +2639,8 @@
 
     addBotMsg(answer, { aiResponse: triggerUsedAI });
     const replyStr = (answer && typeof answer === 'object') ? answer.reply : answer;
-    pushHistory('assistant', replyStr);
+    const replyReasoning4 = (answer && typeof answer === 'object') ? answer.reasoning : '';
+    pushHistory('assistant', replyStr, replyReasoning4);
     showFollowUpPills(generateFollowUps(aiQuery, replyStr));
     resetInactivity();
   };
