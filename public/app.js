@@ -1925,7 +1925,7 @@ function chartAiClick(chart){
     default:
       prompt = `Analyse the investment data ${sec}.`;
   }
-  window.openChatWithPrompt(prompt, prompt);
+  window.openChatWithPrompt(prompt, prompt, { chartPrompt: true });
 }
 
 // ===== HEATMAP TOOLTIP =====

@@ -2514,9 +2514,14 @@
 
   // ── Public API ───────────────────────────────────────────────
   // Exposed so other scripts (e.g. app.js) can open the chat and fire a prompt programmatically.
-  // pinnedAssets: optional array of raw asset objects to use as context (bypasses keyword matching)
-  window.openChatWithPrompt = async function(displayText, promptText, pinnedAssets) {
+  // opts.pinnedAssets: optional array of raw asset objects to use as context (bypasses keyword matching)
+  // opts.chartPrompt: true when triggered from a data-viz Analyse button — skips keyword fallback on AI failure
+  window.openChatWithPrompt = async function(displayText, promptText, opts) {
     if (!win) return; // not yet initialised
+    // opts can be an array (legacy pinnedAssets) or an object with named options
+    const pinnedAssets = Array.isArray(opts) ? opts : (opts && opts.pinnedAssets) || null;
+    const isChartPrompt = opts && !Array.isArray(opts) && opts.chartPrompt === true;
+
     // Use promptText as the AI query if provided; displayText is shown in the bubble
     const aiQuery = promptText || displayText;
     const userDisplay = displayText || promptText;
@@ -2547,13 +2552,19 @@
       return;
     }
 
-    // If we have pinned assets (compare flow) and AI failed, run a deterministic local comparison
-    // instead of falling through to answerFreeText (which would keyword-match and return wrong assets)
     const triggerUsedAI = !!answer;
-    if (!answer && pinnedAssets && pinnedAssets.length) {
-      answer = localComparePinned(pinnedAssets);
+
+    if (!answer) {
+      if (pinnedAssets && pinnedAssets.length) {
+        // Compare flow: use deterministic local comparison rather than keyword-matching a complex prompt
+        answer = localComparePinned(pinnedAssets);
+      } else if (isChartPrompt) {
+        // Chart analysis prompts are too complex for keyword matching — show a clear AI-required message
+        answer = 'AI analysis is required for this question. Please check your AI connection or try again in a moment.';
+      } else {
+        answer = answerFreeText(aiQuery);
+      }
     }
-    if (!answer) answer = answerFreeText(aiQuery);
 
     addBotMsg(answer, { aiResponse: triggerUsedAI });
     const replyStr = (answer && typeof answer === 'object') ? answer.reply : answer;
