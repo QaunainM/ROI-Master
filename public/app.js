@@ -1853,25 +1853,74 @@ function scorecardAiClick(k){
 function chartAiClick(chart){
   if(!window.openChatWithPrompt) return;
   const sec = activeSection === 'All' ? 'across all asset classes' : `in the ${activeSection} section`;
+  const pick = arr => arr[Math.floor(Math.random() * arr.length)];
   let prompt;
   switch(chart){
     case 'top10':
-      prompt = `Analyse the top 10 best-returning assets ${sec} over ${top10Range} years. What do the leaders have in common and what can investors learn from them?`;
+      prompt = pick([
+        `Analyse the top 10 best-returning assets ${sec} over ${top10Range} years. What do the leaders have in common and what can investors learn from them?`,
+        `Looking at the top 10 performers ${sec} over ${top10Range} years, what structural characteristics — sector, asset class, liquidity — do they share? Could these traits be used to screen future winners?`,
+        `The top 10 assets ${sec} at the ${top10Range}-year mark represent the extreme right tail of returns. How much of their outperformance is driven by fundamental value creation versus speculative momentum? Use the data to support your view.`,
+        `If an investor had perfectly picked the top 10 assets ${sec} at the start of the ${top10Range}-year window, what would their portfolio look like today? What does this tell us about the value of foresight versus diversification?`,
+        `Compare the top 10 best-returning assets ${sec} at ${top10Range} years. Are these consistent outperformers across all time horizons (1Y, 5Y, 10Y, 15Y, 20Y), or are they specifically strong at this timeframe? What does that mean for investors?`,
+        `What risk profile would an investor need to accept to hold the top 10 assets ${sec} over ${top10Range} years? Assess volatility, drawdown potential, and whether the reward justifies it.`,
+        `Rank the top 10 best-returning assets ${sec} over ${top10Range} years by category. Which categories are over-represented at the top and what does this signal about where long-term compounding power lies?`,
+      ]);
       break;
     case 'section':
-      prompt = `Compare the median ${sectionRange}-year returns across asset classes ${sec}. Which asset class stands out and why?`;
+      prompt = pick([
+        `Compare the median ${sectionRange}-year returns across asset classes ${sec}. Which asset class stands out and why?`,
+        `Using median ${sectionRange}-year returns ${sec}, which asset class offers the best risk-adjusted return profile for a long-term investor? Consider both the upside and the breadth of assets in each class.`,
+        `Across asset classes ${sec}, how does the distribution of ${sectionRange}-year median returns map to conventional portfolio theory? Are the expected winners (e.g. equities) actually delivering over this timeframe?`,
+        `Which asset class shows the greatest divergence between its best and worst ${sectionRange}-year performers ${sec}? What does this internal variance tell us about selection risk within that class?`,
+        `If you had to allocate 100% to a single asset class based on ${sectionRange}-year median returns ${sec}, which would you choose and why? What are the key risks of that concentrated bet?`,
+        `Analyse whether the asset class rankings by ${sectionRange}-year median return ${sec} would be predictable from first principles (growth potential, liquidity, inflation hedge). Where does the actual data surprise you?`,
+        `Compare the ${sectionRange}-year median returns across asset classes ${sec}. Which classes are closing the performance gap with equities over time, and which are falling further behind?`,
+      ]);
       break;
     case 'heatmap':
-      prompt = `Analyse the average return heatmap ${sec} across all time horizons (1Y, 5Y, 10Y, 15Y, 20Y). Which asset classes show consistent growth and which are volatile?`;
+      prompt = pick([
+        `Analyse the average return heatmap ${sec} across all time horizons (1Y, 5Y, 10Y, 15Y, 20Y). Which asset classes show consistent growth and which are volatile?`,
+        `Using the return heatmap ${sec}, identify which asset classes improve most significantly as the holding period extends from 1Y to 20Y. What compounding dynamics explain this?`,
+        `Which cells in the return heatmap ${sec} stand out as anomalies — either surprisingly high or surprisingly low for their asset class and time horizon? What might explain these outliers?`,
+        `Trace the trajectory of each asset class ${sec} across the 1Y, 5Y, 10Y, 15Y, and 20Y columns in the heatmap. Which classes show a steep upward curve versus those that plateau early?`,
+        `Using the heatmap ${sec}, which asset classes would form the best core long-term holdings (10Y+) versus the best tactical short-term positions (1Y)? Build a framework based on the data.`,
+        `Across the heatmap ${sec}, how many asset classes achieve meaningfully higher average returns at 20Y than at 10Y? What does this tell us about whether extending holding periods beyond a decade is consistently rewarded?`,
+        `Identify the two or three asset class and time-horizon combinations in the heatmap ${sec} that offer the most compelling risk-to-return trade-off. Justify each selection using the underlying figures.`,
+      ]);
       break;
     case 'scatter':
-      prompt = `Looking at median returns by time horizon ${sec}, how does holding period affect investment outcomes? Which asset classes improve most with longer holds?`;
+      prompt = pick([
+        `Looking at median returns by time horizon ${sec}, how does holding period affect investment outcomes? Which asset classes improve most with longer holds?`,
+        `Using the median return scatter ${sec}, model what happens to a diversified portfolio of the top three asset classes if held for 20 years versus 5 years. Is the time premium worth the illiquidity?`,
+        `Which asset classes ${sec} show a near-linear relationship between holding period and return in the scatter data, and which show diminishing or accelerating returns over time? What does each pattern imply for investors?`,
+        `From the median-return-by-horizon chart ${sec}, at what holding period does the median return curve begin to flatten for each asset class? Is there an optimal hold window beyond which additional time adds marginal value?`,
+        `Using the scatter data ${sec}, compare the compounding trajectories of the top two and bottom two asset classes across all time horizons. At what point, if ever, do the laggards catch the leaders?`,
+        `Analyse the holding-period sensitivity ${sec}: which asset classes carry the most risk at the 1-year horizon but deliver the strongest results by year 10 or 20? Does patience materially reduce risk in these classes?`,
+        `From the median return scatter ${sec}, derive an implied annualised return (CAGR) for each asset class at the 10-year and 20-year marks. Which classes sustain the highest CAGR over the full 20-year period?`,
+      ]);
       break;
     case 'catCount':
-      prompt = `Analyse the category breakdown ${sec} at the ${catCountRange}-year horizon. Does a category with more assets tend to produce better or worse average returns?`;
+      prompt = pick([
+        `Analyse the category breakdown ${sec} at the ${catCountRange}-year horizon. Does a category with more assets tend to produce better or worse average returns?`,
+        `In the category count chart ${sec} at the ${catCountRange}-year horizon, which categories have the highest asset count? Is there a positive or negative correlation between category depth and average return?`,
+        `Which categories ${sec} at the ${catCountRange}-year mark are under-represented in terms of asset count despite strong average returns? Does this suggest data gaps or a genuinely narrow opportunity set?`,
+        `Using category count and average return data ${sec} at ${catCountRange} years, classify each category as either diversified (high count, moderate return) or concentrated (low count, high/low return). Which profile would you prefer to invest in?`,
+        `At the ${catCountRange}-year horizon ${sec}, which categories have the widest spread between their best-performing and average-performing assets? Does a larger asset count in the category lead to greater internal variance?`,
+        `Looking at category counts ${sec} at ${catCountRange} years, which categories punch above their weight — delivering strong average returns despite having few assets? What qualities might explain this efficiency?`,
+        `Using the category breakdown ${sec} at ${catCountRange} years, identify which categories have grown in relevance (high count, high return) and which have become legacy holdings (high count, declining return relevance).`,
+      ]);
       break;
     case 'catRoi':
-      prompt = `Which categories have the highest average ${catRoiRange}-year ROI ${sec}? What drives the top categories and should investors concentrate there?`;
+      prompt = pick([
+        `Which categories have the highest average ${catRoiRange}-year ROI ${sec}? What drives the top categories and should investors concentrate there?`,
+        `Rank the top five categories by average ${catRoiRange}-year ROI ${sec}. For each, identify whether their performance is driven by a few outliers or consistent broad-based returns across all assets in the category.`,
+        `At the ${catRoiRange}-year horizon ${sec}, which categories deliver ROI that substantially exceeds what passive index investing would achieve? Is active category selection justified by the data?`,
+        `Using average ${catRoiRange}-year ROI by category ${sec}, which categories have shown the steepest decline in average returns compared to shorter horizons? What structural shifts might explain a category losing momentum over time?`,
+        `Compare the highest and lowest ROI categories ${sec} at ${catRoiRange} years. What fundamental differences — growth profile, liquidity, macro sensitivity — explain the gap at this specific time horizon?`,
+        `From the category ROI chart ${sec} at ${catRoiRange} years, identify any categories that might be over-represented in typical retail portfolios relative to their actual return contribution. Where is the real value hiding?`,
+        `If you were constructing a thematic portfolio based solely on category ROI ${sec} at ${catRoiRange} years, which three categories would you overweight and which would you underweight? Justify each decision using the data.`,
+      ]);
       break;
     default:
       prompt = `Analyse the investment data ${sec}.`;
