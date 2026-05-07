@@ -104,6 +104,8 @@ The built-in chat widget operates in two modes:
 - **Guardrails** — three layers of protection: client-side input blocking, server-side pattern matching, and a hardened system prompt that enforces read-only behaviour and resists prompt injection
 - **IP rate limiting** — each unique IP address is limited to 30 AI calls per UTC day, tracked server-side via the hosting platform's key-value store. This cannot be bypassed by clearing browser storage. The chat counter shows remaining messages; users who hit the limit see a message directing them to the site owner
 
+---
+
 ### How the AI Reasons Against the Dataset
 
 When a user sends a message, the full dataset is serialised into a compact string and sent to the LLM alongside the question. Every asset is included — none are filtered out — using an ultra-compact format:
