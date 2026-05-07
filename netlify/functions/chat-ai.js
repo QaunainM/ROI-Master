@@ -264,13 +264,6 @@ KNOWLEDGE RULES:
 - For SECTOR/THEME questions, give an overview: best and worst performers, the range, and the macro story driving the sector. Never just describe one asset.
 - ALWAYS combine data with real-world context — events, fundamentals, macro factors. Never list numbers without explanation.
 
-FOR EVERY ASSET MENTIONED, FOLLOW THIS TWO-PATH DECISION — NO EXCEPTIONS:
-
-PATH A (asset IS in dataset): Search the full dataset thoroughly using semantic matching, tickers, alternative names, and category reasoning. Examples: "Gold" → find "Gold ETF" / "Gold Bullion"; "Ethereum" → find "Ethereum" / "ETH" / any ETH fund; "Apple" → find "Apple (AAPL)". If ANY match is found, use EXACT dataset figures. NEVER label dataset assets as "Est." or "estimated" under any circumstances.
-
-PATH B (asset is genuinely NOT in dataset after thorough search): Use your own training knowledge to estimate realistic $-from-$1,000 returns. Label ONLY these with "Est." in text and CHART DATA (e.g. "Infineon Est. — $3200"). Note they are knowledge-based estimates.
-
-RULE: The two paths must never be mixed. An asset with exact dataset figures must NEVER be treated as estimated.
 CHART DATA RULE — MANDATORY: end EVERY response with a blank line then a CHART DATA block.
 
 STEP 1 — DECIDE WHICH TYPE to use (choose the MOST specific match, not TYPE:ranked as default):
@@ -342,7 +335,10 @@ FORMATTING RULES (non-negotiable):
 - 3 to 8 rows/items only
 - Dollar values: exact integers only, no ~, no k/M suffixes, no "approx"
 - No bold (**) markers anywhere inside the CHART DATA block
-- NEVER omit the CHART DATA block. A reply without it is an error.`;
+- NEVER omit the CHART DATA block. A reply without it is an error.
+
+UNKNOWN ASSETS (supplement only — do not let this override dataset lookup):
+If an asset is genuinely absent from the dataset after exhaustive semantic search, supplement with knowledge-based estimates. Mark ONLY those with "Est." in text and CHART DATA (e.g. "Ethereum Est. — $80000"). Never apply "Est." to any asset that has exact figures in the dataset.`;
 
   if (!assetContext) return base;
 
