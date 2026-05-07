@@ -2542,7 +2542,8 @@
 
     let answer = null;
     // Try AI whenever it's not explicitly unavailable (null = not-yet-probed, still worth trying)
-    if (aiAvailable !== false) answer = await fetchAIAnswer(aiQuery, chatHistory.slice(0, -1), pinnedAssets || null);
+    const aiWasAttempted = aiAvailable !== false;
+    if (aiWasAttempted) answer = await fetchAIAnswer(aiQuery, chatHistory.slice(0, -1), pinnedAssets || null);
 
     showTyping(false);
     setSendDisabled(false);
@@ -2558,9 +2559,10 @@
       if (pinnedAssets && pinnedAssets.length) {
         // Compare flow: use deterministic local comparison rather than keyword-matching a complex prompt
         answer = localComparePinned(pinnedAssets);
-      } else if (isChartPrompt) {
-        // Chart analysis prompts are too complex for keyword matching — show a clear AI-required message
-        answer = 'AI analysis is required for this question. Please check your AI connection or try again in a moment.';
+      } else if (isChartPrompt && aiWasAttempted) {
+        // AI was connected but returned nothing for this chart prompt — keyword matching would
+        // produce a misleading canned response. Ask the user to retry instead.
+        answer = 'The AI did not return a response for this question. Please try again in a moment.';
       } else {
         answer = answerFreeText(aiQuery);
       }

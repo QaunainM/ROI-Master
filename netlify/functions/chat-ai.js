@@ -199,10 +199,11 @@ exports.handler = async function (event) {
 
     const data = await response.json();
     const message_out = data.choices?.[0]?.message || {};
-    const reply = message_out.content || '';
     const reasoning = message_out.reasoning_content || '';
-    // Log if reply is unexpectedly empty so it's visible in Netlify function logs
-    if (!reply) console.warn('Empty reply from LLM. finish_reason:', data.choices?.[0]?.finish_reason, 'usage:', JSON.stringify(data.usage));
+    // DeepSeek thinking mode often puts the full answer in reasoning_content with empty content —
+    // fall back to reasoning_content if content is empty so the reply is never silently dropped.
+    const reply = message_out.content || reasoning;
+    if (!message_out.content) console.warn('Empty content from LLM — using reasoning_content as reply. finish_reason:', data.choices?.[0]?.finish_reason, 'usage:', JSON.stringify(data.usage));
     return {
       statusCode: 200,
       headers,
